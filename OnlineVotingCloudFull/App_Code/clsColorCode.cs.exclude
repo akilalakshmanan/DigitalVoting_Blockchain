@@ -1,0 +1,217 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
+using System.Configuration;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Web.UI.HtmlControls;
+
+/// <summary>
+/// Summary description for clsColorCode
+/// </summary>
+public class clsColorCode
+{
+    public static System.Text.UTF32Encoding encoding = new System.Text.UTF32Encoding();
+
+    public static string secretkey = "jedy";
+    public static string textmessage = "hello";
+
+    //-------------
+    //this is the input colors 1
+    public static List<Color> secretkeyColorCodes = new List<Color>();
+    //this is the input colors 2
+    public static List<Color> textmessageColorCodes = new List<Color>();
+    //-------------
+
+    //this is the output color
+    public static List<Color> outputcolors = new List<Color>();
+
+
+    public static Lookupchart luc = new Lookupchart();
+    public clsColorCode()
+    {
+
+    }
+    public static string Encrypt()
+    {
+
+        settextmessageColorCodes();
+
+
+        string s = "";
+        int colorvalue = 0;
+        int n1, n2;
+        Color c1;
+        Color c2;
+        Color CombinedColor;
+        secretkeyColorCodes.Clear();
+        for (int i = 0; i < secretkey.Length; i++)
+        {
+            s = secretkey[i].ToString();
+            //if j goes 24 will return
+            colorvalue =GetSecretKeyColors(s);
+
+            n1 =(int)( colorvalue / 10);
+            n2 = (int)(colorvalue % 10);
+            c1=Color.FromArgb(n1, n1, n1);
+            c2 = Color.FromArgb(n2, n2, n2);
+
+            CombinedColor = Color.FromArgb(c1.R, c2.R, 0);
+            secretkeyColorCodes.Add(CombinedColor);
+        }
+
+        //merge secret key color codes with text message color codes
+        // for example secret key 'jedy' mix with text message 'hello india'
+        // j color overlapped with h color, e color overlapped with e color,
+        // d color overlapped with l color, y color overlapped with l color,
+        //and again j color overlapped with h color, o color overlapped with e color,... 
+    
+        
+            outputcolors.Clear();
+            string encryptedtext = "";
+
+        for (int i = 0; i < textmessageColorCodes.Count; i++)
+        {
+            c1 = textmessageColorCodes[i];
+            c2 = secretkeyColorCodes[i % secretkey.Length];
+
+            outputcolors.Add(Color.FromArgb (c2.R,c2.G,c1.B));
+            encryptedtext += ((char)(c2.R)).ToString() + ((char)(c2.G)).ToString() + ((char)(c1.B)).ToString(); 
+        }
+        return encryptedtext;
+
+    }
+    public static string Decrypt()
+    {
+        Color oc;
+      
+        int secretkeycolor1digit;
+int secretkeycolor2digit;
+
+        int textmessagecolor;
+        string secretkeycharacter = "";
+        string result="";
+        for (int i = 0;i< outputcolors.Count; i++)
+        {
+            oc = outputcolors[i];
+            secretkeycolor1digit=oc.R;
+            secretkeycolor2digit=oc.G;
+            textmessagecolor=oc.B;
+
+       secretkeycharacter =GetSecretKeyCharacter(secretkeycolor1digit * 10 + secretkeycolor2digit);
+       if (secretkeycharacter == secretkey[i % secretkey.Length].ToString())
+       {
+           result += ((char)(textmessagecolor)).ToString();
+       }
+        }
+        return result;
+
+    }
+
+    //if 'j' comes 24 will return
+    public static int GetSecretKeyColors(string s)
+    {
+        int lookupvalue = 0;
+       // secretkeyColorCodes.Clear();
+      //  for (int i = 0; i < secretkey.Length; i++)
+        //{
+          //  s = secretkey[i].ToString();
+            for (int j = 0; j < luc.character.Length; j++)
+            {
+                if (s == luc.character[j].ToString())
+                {
+                    lookupvalue = luc.charvalue[j];
+                    return lookupvalue;
+                }
+            }
+        //}
+            return 0;
+    }
+    //if '24' comes j will return
+    public static string GetSecretKeyCharacter(int s)
+    {
+       // int lookupvalue = 0;
+        string temp="";
+        // secretkeyColorCodes.Clear();
+        for (int i = 0; i < secretkey.Length; i++)
+        {
+            temp = secretkey[i].ToString();
+            for (int j = 0; j < luc.charvalue.Length; j++)
+            {
+                if (s == luc.charvalue[j])
+                {
+                    //lookupvalue = luc.charvalue[j];
+                    return luc.character[j];
+                }
+            }
+        }
+        return "";
+    }
+    public static void settextmessageColorCodes()
+    {
+        char s;
+        Color c;
+        int lookupvalue = 0;
+        textmessageColorCodes.Clear();
+        for (int i = 0; i < textmessage.Length; i++)
+        {
+            s = textmessage[i];
+            textmessageColorCodes.Add(Color.FromArgb((int)s, (int)s, (int)s));
+        }
+
+
+    }
+    public static int getunicode(string s)
+    {
+        return (int)(s[0]);
+
+        //this is for unicode
+        /*byte[] bytes = encoding.GetBytes(s);
+        return BitConverter.ToInt32(bytes, 0);
+        */
+
+
+
+
+        /*for (int i = 0; i < bytes.Length; i += sizeof(int))
+        {
+            Console.WriteLine(BitConverter.ToInt32(bytes, i));
+        }*/
+    }
+}
+public class Lookupchart
+{
+    public string[] character;
+    public int[] charvalue;
+    public Lookupchart()
+    {
+        character = new string[36];
+        charvalue = new int[36];
+        int i, j, intvalue;
+        for (i = 97; i < 123; i++)
+        {
+            character[i - 97] = ((char)i).ToString();
+        }
+        j = 26;
+        for (i = 48; i < 58; i++)
+        {
+            character[j] = ((char)i).ToString();
+            j++;
+        }
+
+
+        for (i = 1; i <= 6; i++)
+        {
+            for (j = 1; j <= 6; j++)
+            {
+                intvalue = i * 10 + j;
+
+                charvalue[(i-1)*6+(j-1)] = intvalue;
+            }
+        }
+    }
+}
